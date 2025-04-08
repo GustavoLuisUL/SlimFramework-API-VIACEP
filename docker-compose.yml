@@ -1,0 +1,30 @@
+version: '3.8'
+
+volumes:
+  logs:
+    driver: local
+
+services:
+
+  app:
+    build:
+      context: .
+      dockerfile: ./docker/php/Dockerfile  # Caminho para o Dockerfile com PHP-FPM e NGINX
+    container_name: slim_php_app
+    ports:
+      - "8080:80"  # Mapeando a porta 8080 para a porta 80 do container
+    volumes:
+      - .:/var/www/html  # Volume para permitir alterações ao vivo
+    env_file:
+      - .env
+
+  mysql:
+    image: mysql:8.3.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-mysql}  # Root password from .env
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql:/var/lib/mysql  # Persist MySQL data
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql  # Initialize MySQL with a custom script

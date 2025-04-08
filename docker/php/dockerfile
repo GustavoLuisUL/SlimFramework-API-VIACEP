@@ -1,0 +1,33 @@
+# Usar a imagem PHP com FPM (FastCGI Process Manager) para ser usado com NGINX
+FROM php:8.2-fpm
+
+# Instalar dependências necessárias
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libzip-dev \
+    unzip \
+    git \
+    nginx \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd zip pdo pdo_mysql
+
+# Instalar o Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Copiar os arquivos do projeto para dentro do container
+WORKDIR /var/www/html
+COPY . .
+
+# Instalar as dependências do Composer
+RUN composer install --no-dev --optimize-autoloader
+
+# Expor a porta 80 para o servidor NGINX
+EXPOSE 80
+
+# Copiar a configuração do NGINX
+COPY ./docker/nginx/default.conf /etc/nginx/sites-available/default
+
+# Rodar NGINX e PHP-FPM no mesmo container
+CMD service nginx start && php-fpm
